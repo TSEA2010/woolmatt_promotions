@@ -219,6 +219,10 @@ def auto_claim_supplier_rebates(doc, method=None):
     pass
 
 @frappe.whitelist()
+def deactivate_conflicting_pricing_rules(doc, method=None):
+    return validate_conflicting_promotions(doc, method=method)
+
+@frappe.whitelist()
 def validate_conflicting_promotions(doc, method=None):
     if isinstance(doc, str):
         doc = frappe.get_doc("Promotional Scheme", doc)
