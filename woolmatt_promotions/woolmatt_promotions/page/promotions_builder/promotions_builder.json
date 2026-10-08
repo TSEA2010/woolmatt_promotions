@@ -1,0 +1,16 @@
+{
+ "creation": "2026-08-14 12:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Page",
+ "modified": "2026-08-14 12:00:00.000000",
+ "module": "Woolmatt Promotions",
+ "name": "promotions-builder",
+ "page_name": "promotions-builder",
+ "roles": [
+  {
+   "role": "System Manager"
+  }
+ ],
+ "standard": "Yes",
+ "title": "Promotions Builder"
+}

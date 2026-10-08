@@ -1,0 +1,318 @@
+
+<style>
+
+:root{
+ --green:#1F4D2E;--green-dk:#143823;--green-lt:#2E6B44;--gold:#F2A900;--gold-dk:#D9930A;
+ --bg:#EAEEE8;--panel:#FFFFFF;--line:#DFE5DC;--ink:#16241C;--muted:#6C7C71;--danger:#C0392B;
+ --blue:#2D6CDF;--purple:#8A5CD1;--teal:#1E88A8;--orange:#E8730C;--pink:#D6467F;
+ --shadow:0 1px 3px rgba(20,40,25,.08),0 8px 24px rgba(20,40,25,.06);}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:13.5px}
+.num{font-variant-numeric:tabular-nums}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,select,textarea{font-family:inherit;font-size:13.5px;color:var(--ink)}
+/* top bar */
+.topbar{position:sticky;top:0;z-index:30;background:var(--green-dk);color:#fff;display:flex;align-items:center;gap:16px;padding:12px 24px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.4px;font-size:16px}
+.brand .mark{width:28px;height:28px;border-radius:7px;background:var(--gold);color:var(--green-dk);display:grid;place-items:center;font-weight:900;font-size:15px}
+.brand small{font-weight:600;color:#B9D4C2;font-size:10px;letter-spacing:1.5px;text-transform:uppercase}
+.tbnav{margin-left:14px;display:flex;gap:4px}
+.tbnav button{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;color:#B9D4C2}
+.tbnav button.on{background:rgba(255,255,255,.14);color:#fff}
+.tbactions{margin-left:auto;display:flex;gap:10px}
+.btn{padding:9px 18px;border-radius:9px;font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:7px}
+.btn.ghost{background:rgba(255,255,255,.12);color:#fff}.btn.ghost:hover{background:rgba(255,255,255,.2)}
+.btn.gold{background:var(--gold);color:var(--green-dk)}.btn.gold:hover{background:var(--gold-dk)}
+.btn.green{background:var(--green);color:#fff}.btn.green:hover{background:var(--green-lt)}
+.btn.sm{padding:7px 13px;font-size:12px}
+.btn.outline{border:1.5px solid var(--line);background:#fff;color:var(--ink)}.btn.outline:hover{background:var(--bg)}
+.wrap{max-width:1200px;margin:20px auto;padding:0 20px 70px}
+.view{display:none}.view.on{display:block}
+/* KPI cards */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:16px 18px}
+.kpi .kl{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted)}
+.kpi .kv{font-size:26px;font-weight:800;margin-top:6px}
+.kpi .kd{font-size:12px;color:var(--muted);margin-top:3px}
+.kpi.accent{background:#0E1A12;color:#fff}.kpi.accent .kl{color:#5C7A66}.kpi.accent .kv{color:#37E27A}.kpi.accent .kd{color:#8AA394}
+.kpi.gold{background:linear-gradient(135deg,#F2A900,#D9930A);color:#3A2E00}.kpi.gold .kl,.kpi.gold .kd{color:#6B5200}
+/* section head */
+.sechead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sechead h2{font-size:18px;font-weight:800}
+.filters{display:flex;gap:6px}
+.filters button{padding:7px 14px;border-radius:8px;font-size:12.5px;font-weight:700;color:var(--muted);border:1.5px solid var(--line);background:#fff}
+.filters button.on{background:var(--green);color:#fff;border-color:var(--green)}
+/* promo cards */
+.plist{display:flex;flex-direction:column;gap:12px}
+.pcard{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:16px 18px;display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center}
+.pcard .pmain{min-width:0}
+.pcard .ptop{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:7px}
+.pcard .pname{font-size:15.5px;font-weight:800}
+.pcard .pdesc{color:var(--muted);font-size:12.5px;margin-bottom:9px}
+.pcard .pmeta{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.pcard .pmeta b{color:var(--ink)}
+.pcard .pright{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.pactions{display:flex;gap:7px}
+.badge{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:6px;letter-spacing:.3px;text-transform:uppercase}
+.b-type{background:#EAF1FB;color:var(--blue)}
+.b-active{background:#E1F1E4;color:#2E7D32}
+.b-sched{background:#FDF0D6;color:#9A6A00}
+.b-ended{background:#EEE;color:#888}
+.b-self{background:#F3ECFA;color:var(--purple)}
+.b-supplier{background:#FCE9DE;color:var(--orange)}
+.b-both{background:#E0F2F4;color:var(--teal)}
+.dotstat{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700}
+.dotstat .d{width:8px;height:8px;border-radius:50%}
+.dotstat.active .d{background:#2E9E5B}.dotstat.active{color:#2E7D32}
+.dotstat.sched .d{background:var(--gold)}.dotstat.sched{color:#9A6A00}
+.dotstat.ended .d{background:#AAB4AC}.dotstat.ended{color:#888}
+/* cards / forms */
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:22px 24px;margin-bottom:16px}
+.card h3{font-size:14px;font-weight:800;color:var(--green);margin-bottom:2px;display:flex;align-items:center;gap:8px}
+.card .csub{color:var(--muted);font-size:12px;margin-bottom:16px}
+.step{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;font-size:12px;font-weight:800;align-items:center;justify-content:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px 20px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px 20px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 18px}
+.full{grid-column:1/-1}
+.f{display:flex;flex-direction:column;gap:6px}
+.f label{font-size:12px;font-weight:700;color:var(--muted)}
+.f .hint{font-size:11px;color:#9AA79E;font-weight:500}
+.f input,.f select,.f textarea{height:42px;border:1.5px solid var(--line);border-radius:9px;padding:0 12px;outline:none;background:#fff;transition:border-color .12s}
+.f textarea{height:auto;padding:10px 12px;resize:vertical;min-height:60px;line-height:1.5}
+.f input:focus,.f select:focus,.f textarea:focus{border-color:var(--green-lt);box-shadow:0 0 0 3px rgba(46,107,68,.08)}
+.f input:disabled{background:#F4F6F2;color:var(--ink);font-weight:800}
+.inputgrp{display:flex}
+.inputgrp .pfx,.inputgrp .sfx{display:grid;place-items:center;padding:0 12px;background:#F4F6F2;border:1.5px solid var(--line);font-size:12px;font-weight:700;color:var(--muted)}
+.inputgrp .pfx{border-right:none;border-radius:9px 0 0 9px}.inputgrp input{border-radius:0;flex:1}
+.inputgrp .sfx{border-left:none;border-radius:0 9px 9px 0}
+.inputgrp.p-only input{border-radius:0 9px 9px 0}.inputgrp.s-only input{border-radius:9px 0 0 9px}
+/* type picker */
+.typegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.typecard{border:2px solid var(--line);border-radius:12px;padding:14px;text-align:left;background:#fff;transition:.12s;display:flex;flex-direction:column;gap:6px}
+.typecard:hover{border-color:#C3D0C1}
+.typecard.on{border-color:var(--green);background:#F1F7F2}
+.typecard .ti{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-size:18px;background:var(--bg)}
+.typecard.on .ti{background:var(--green);color:#fff}
+.typecard b{font-size:13px}.typecard span{font-size:11px;color:var(--muted);line-height:1.3}
+/* toggle */
+.tog{position:relative;width:42px;height:24px;border-radius:20px;background:#CBD5C8;transition:.15s;flex-shrink:0}
+.tog.on{background:var(--green)}.tog::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.15s}.tog.on::after{left:21px}
+/* seg control */
+.seg{display:inline-flex;background:var(--bg);border-radius:10px;padding:3px;gap:2px}
+.seg button{padding:8px 15px;border-radius:8px;font-size:12.5px;font-weight:700;color:var(--muted)}
+.seg button.on{background:#fff;color:var(--green);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+/* product selection */
+.selbar{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px}
+.searchwrap{position:relative;flex:1;min-width:220px}
+.searchwrap input{width:100%;height:42px;border:1.5px solid var(--line);border-radius:9px;padding:0 12px 0 38px;outline:none}
+.searchwrap input:focus{border-color:var(--green-lt)}
+.searchwrap svg{position:absolute;left:12px;top:11px;opacity:.45}
+.sdrop{position:absolute;left:0;right:0;top:46px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);z-index:20;max-height:260px;overflow:auto;display:none}
+.sdrop.show{display:block}
+.sdrow{padding:9px 13px;border-bottom:1px solid #F0F3EF;cursor:pointer;display:flex;justify-content:space-between;gap:10px}
+.sdrow:hover{background:#F4F7F2}.sdrow small{color:var(--muted)}
+.prodtbl{width:100%;border-collapse:collapse}
+.prodtbl th{text-align:left;font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:#94A199;font-weight:800;padding:8px 10px;border-bottom:1.5px solid var(--line)}
+.prodtbl td{padding:8px 10px;border-bottom:1px solid #F0F3EF;font-size:13px}
+.prodtbl .rm{width:28px;height:28px;border-radius:7px;color:#C6907F;font-size:16px;display:grid;place-items:center}
+.prodtbl .rm:hover{background:#FBE9E5;color:var(--danger)}
+.emptyp{text-align:center;color:#A8B4AB;padding:26px;font-size:13px}
+.countpill{background:var(--green);color:#fff;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:800}
+/* funding */
+.fundsplit{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.fundbox{border-radius:12px;padding:16px;color:#fff}
+.fundbox.sup{background:linear-gradient(135deg,#E8730C,#C85D00)}
+.fundbox.self{background:linear-gradient(135deg,#8A5CD1,#6B41B0)}
+.fundbox .fl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.85}
+.fundbox .fv{font-size:24px;font-weight:800;margin-top:5px}
+.note{background:#FFF7E6;border:1px solid #E8C97A;border-radius:9px;padding:10px 13px;font-size:12px;color:#8A6D1E;margin-top:12px}
+.pospreview{background:#0E1A12;border-radius:12px;padding:14px 16px;color:#fff;margin-top:10px}
+.pospreview .pl{font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:#5C7A66;font-weight:700;margin-bottom:6px}
+.pospreview .pt{font-size:16px;font-weight:800;color:var(--gold)}
+/* report */
+.chartwrap{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:20px 22px;margin-bottom:16px}
+.bars{display:flex;align-items:flex-end;gap:6px;height:180px;padding-top:10px}
+.bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;height:100%}
+.bar .bcol{width:70%;border-radius:6px 6px 0 0;background:linear-gradient(180deg,#3FA34D,#1F4D2E);min-height:2px;transition:height .3s}
+.bar .blab{font-size:9.5px;color:var(--muted)}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-top:12px}
+.legend span{display:inline-flex;align-items:center;gap:6px}.legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+
+.bulkapply{display:inline-flex;align-items:center;gap:6px;background:#FAFBF9;border:1px solid var(--line);border-radius:9px;padding:4px 8px}
+.bulkapply select,.bulkapply input{border:1.5px solid var(--line);border-radius:7px;padding:0 6px;outline:none;font-size:12px}
+.ptbl td{vertical-align:middle}
+.ptbl input,.ptbl select{height:34px;border:1.5px solid var(--line);border-radius:7px;padding:0 8px;outline:none;font-size:12.5px}
+.ptbl input:focus,.ptbl select:focus{border-color:var(--green-lt)}
+.ptbl .pctin{width:70px;text-align:right}
+.ptbl .fundsel{width:110px}
+.ptbl .regp{text-align:right;font-weight:700}
+.ptbl .totdisc{text-align:right;font-weight:800;color:var(--orange)}
+.ptbl .offerp{text-align:right;font-weight:800;color:var(--green)}
+.ptbl .muted-cell{color:#B0BBB2;text-align:right}
+.ptbl tfoot td{border-top:2px solid var(--line);font-weight:800;padding-top:10px}
+.disabled-in{background:#F4F6F2!important;color:#B0BBB2!important}
+.scopesum{font-size:12.5px;color:var(--muted);padding:10px 14px;background:#FAFBF9;border:1px solid var(--line);border-radius:9px}
+.scopesum b{color:var(--ink)}
+.quickadd{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.qchip{border:1.5px solid var(--line);background:#fff;border-radius:9px;padding:9px 13px;font-size:12.5px;font-weight:700;color:var(--ink);display:inline-flex;align-items:center;gap:7px}
+.qchip:hover{border-color:var(--green);background:#F1F7F2;color:var(--green)}
+.qchip.all{background:var(--green);color:#fff;border-color:var(--green)}.qchip.all:hover{background:var(--green-lt)}
+.qchip .qn{background:var(--bg);color:var(--muted);border-radius:12px;padding:1px 8px;font-size:11px}
+.qchip.all .qn{background:rgba(255,255,255,.2);color:#fff}
+.bulkwrap{margin-top:6px}
+.blab{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px}
+#bulkBox{width:100%;border:1.5px solid var(--line);border-radius:9px;padding:10px 12px;min-height:74px;resize:vertical;outline:none;font-family:inherit;font-size:13px;line-height:1.5}
+#bulkBox:focus{border-color:var(--green-lt)}
+.bulkres{font-size:12.5px;font-weight:700}
+.bulkres .ok{color:#2E7D32}.bulkres .bad{color:var(--danger)}
+@media(max-width:900px){.kpis,.typegrid{grid-template-columns:repeat(2,1fr)}.grid2,.grid3,.grid4,.fundsplit{grid-template-columns:1fr}.pcard{grid-template-columns:1fr}}
+
+</style>
+<div id="promotions-app">
+<div class="topbar">
+  <div class="brand"><span class="mark">W</span> WOOLMATT <small>Promotions</small></div>
+  <div class="tbnav">
+    <button id="nav-dashboard" class="on" onclick="showView('dashboard')">Dashboard</button>
+    <button id="nav-builder" onclick="newPromo()">Create</button>
+  </div>
+  <div class="tbactions"><button class="btn gold" onclick="newPromo()">+ New promotion</button></div>
+</div>
+
+<div class="wrap">
+  <!-- DASHBOARD -->
+  <div class="view on" id="v-dashboard">
+    <div class="kpis">
+      <div class="kpi"><div class="kl">Active promotions</div><div class="kv num" id="kActive">0</div><div class="kd" id="kSched">0 scheduled</div></div>
+      <div class="kpi accent"><div class="kl">Discount given (30d)</div><div class="kv num" id="kDisc">KES 0</div><div class="kd">across all offers</div></div>
+      <div class="kpi gold"><div class="kl">Supplier rebates due</div><div class="kv num" id="kRebate">KES 0</div><div class="kd">recoverable from suppliers</div></div>
+      <div class="kpi"><div class="kl">Self-funded cost</div><div class="kv num" id="kSelf">KES 0</div><div class="kd">our margin investment</div></div>
+    </div>
+    <div class="sechead"><h2>Promotions</h2>
+      <div class="filters">
+        <button class="on" data-f="all" onclick="setFilter('all',this)">All</button>
+        <button data-f="active" onclick="setFilter('active',this)">Active</button>
+        <button data-f="scheduled" onclick="setFilter('scheduled',this)">Scheduled</button>
+        <button data-f="ended" onclick="setFilter('ended',this)">Ended</button>
+      </div>
+    </div>
+    <div class="plist" id="promoList"></div>
+  </div>
+
+  <!-- BUILDER -->
+  <div class="view" id="v-builder">
+    <div class="sechead"><h2 id="builderTitle">New promotion</h2>
+      <div style="display:flex;gap:10px">
+        <button class="btn outline" onclick="showView('dashboard')">Cancel</button>
+        <button class="btn green" onclick="savePromo()">✓ Save promotion</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="step">1</span> Basics</h3>
+      <div class="grid2">
+        <div class="f"><label>Promotion name <span style="color:var(--danger)">*</span></label><input id="bName" placeholder="e.g. Abony Cheese Weekend Deal" oninput="updatePosPreview()"></div>
+        <div class="f"><label>Priority <span class="hint">(higher wins if offers overlap)</span></label><input id="bPriority" type="number" value="10"></div>
+        <div class="f full"><label>POS offer description <span class="hint">(shown to cashier &amp; on receipt)</span></label><input id="bPosDesc" placeholder="e.g. 20% off all Abony cheese" oninput="updatePosPreview()"></div>
+      </div>
+      <div class="pospreview"><div class="pl">POS displays</div><div class="pt" id="posPrev">🎁 Your offer description will appear here</div></div>
+    </div>
+
+    <div class="card">
+      <h3><span class="step">2</span> Offer type</h3>
+      <div class="csub">Pick the mechanic. Set the headline value here and it applies to every product below — you can then fine-tune each row.</div>
+      <div class="typegrid" id="typeGrid"></div>
+      <div id="typeConfig" style="margin-top:18px"></div>
+    </div>
+
+    <div class="card">
+      <h3><span class="step">3</span> Products</h3>
+      <div class="csub">Scope by supplier, brand or manufacturer to pull items in fast — or paste a list / search. Each product's discount is set in the table and split by who funds it.</div>
+      <div class="grid3" style="align-items:end;margin-bottom:12px">
+        <div class="f"><label>Scope by</label><select id="scopeBy" onchange="onScopeBy()"><option value="supplier">Supplier</option><option value="brand">Brand</option><option value="mfr">Manufacturer</option></select></div>
+        <div class="f"><label id="scopeValLbl">Supplier</label><select id="scopeVal" onchange="onScopeVal()"></select></div>
+        <div class="f"><button class="btn green" id="addScopeBtn" style="height:42px" onclick="addScope()">+ Add all matching</button></div>
+      </div>
+      <div id="scopeSummary" class="scopesum" style="margin-bottom:14px">Choose a scope to see how many products it covers.</div>
+      <div class="bulkwrap">
+        <label class="blab">📋 Bulk add — paste product names, one per line (or comma-separated)</label>
+        <textarea id="bulkBox" placeholder="Abony Cheddar Cheese 200g&#10;Abony Feta Cheese 400g"></textarea>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:8px">
+          <button class="btn green sm" onclick="bulkAdd()">+ Add all pasted items</button>
+          <span id="bulkResult" class="bulkres"></span>
+        </div>
+      </div>
+      <div class="searchwrap" id="searchWrap" style="margin-top:14px;max-width:100%">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16241C" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+        <input id="prodSearch" placeholder="Or search a single product to add…" autocomplete="off" oninput="prodSearchInput()">
+        <div class="sdrop" id="prodDrop"></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0 8px;flex-wrap:wrap;gap:10px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted)">Products in this offer <span class="countpill" id="prodCount">0</span></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <div style="display:inline-flex;gap:4px">
+            <button class="btn outline sm" onclick="setBogoPreset(1,1)">🎁 Buy 1 Get 1 Free</button>
+            <button class="btn outline sm" onclick="setBogoPreset(2,1)">🎁 Buy 2 Get 1 Free</button>
+          </div>
+          <div class="bulkapply">
+            <span style="font-size:11.5px;color:var(--muted);font-weight:700">Apply to all:</span>
+            <select id="bulkFund" style="height:32px"><option value="">Funding…</option><option value="supplier">Supplier</option><option value="self">Self</option><option value="both">Both</option></select>
+            <input id="bulkVal" type="number" placeholder="0" style="width:64px;height:32px;text-align:center">
+            <span id="bulkUnit" style="font-size:12px;font-weight:700;color:var(--muted)">%</span>
+            <button class="btn outline sm" onclick="applyToAll()">Apply</button>
+          </div>
+          <button class="btn outline sm" onclick="clearProducts()">Clear all</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+      <table class="prodtbl ptbl"><thead><tr id="prodHead"></tr></thead><tbody id="prodBody"></tbody><tfoot id="prodFoot"></tfoot></table></div>
+    </div>
+
+    <div class="card">
+      <h3><span class="step">4</span> Schedule</h3>
+      <div class="grid4">
+        <div class="f"><label>Start date</label><input id="bStart" type="date"></div>
+        <div class="f" id="startTimeWrap"><label>Start time</label><input id="bStartT" type="time" value="08:00"></div>
+        <div class="f"><label>End date</label><input id="bEnd" type="date"></div>
+        <div class="f" id="endTimeWrap"><label>End time</label><input id="bEndT" type="time" value="20:00"></div>
+      </div>
+      <div id="schedHint" style="display:none" class="note">⏰ This is a happy-hour offer — the daily active hours are set in the <b>time windows</b> under the offer type above. Here you only set the campaign's run <b>dates</b>.</div>
+    </div>
+  </div>
+
+  <!-- REPORT -->
+  <div class="view" id="v-report">
+    <div class="sechead"><h2 id="repTitle">Promotion report</h2>
+      <div style="display:flex;gap:10px">
+        <button class="btn outline" onclick="showView('dashboard')">← Back</button>
+        <button class="btn outline" onclick="extendPromo()">⏱ Extend offer</button>
+        <button class="btn gold" onclick="alert('Report exported (demo)')">⬇ Export report</button>
+      </div>
+    </div>
+    <div id="repMeta" style="margin-bottom:16px"></div>
+    <div class="kpis" id="repKpis"></div>
+    <div class="chartwrap">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <b style="font-size:14px">Units sold during promotion</b>
+        <span style="font-size:12px;color:var(--muted)" id="repRange"></span>
+      </div>
+      <div class="bars" id="repBars"></div>
+      <div class="legend"><span><i style="background:#1F4D2E"></i> Promo period</span><span><i style="background:#CBD5C8"></i> Baseline (prior)</span></div>
+    </div>
+    <div class="card"><h3>Performance by product</h3>
+      <table class="prodtbl"><thead><tr><th>Product</th><th style="text-align:right">Units sold</th><th style="text-align:right">Disc / unit</th><th style="text-align:right">Total discount</th><th style="text-align:right">Supplier rebate</th><th style="text-align:right">Self-funded</th></tr></thead><tbody id="repBody"></tbody><tfoot id="repFoot"></tfoot></table>
+    </div>
+  </div>
+</div>
+
+<div id="extendOverlay" style="position:fixed;inset:0;background:rgba(16,30,20,.55);display:none;align-items:center;justify-content:center;z-index:50">
+  <div style="background:#fff;border-radius:16px;width:min(400px,92vw);padding:24px">
+    <h3 style="font-size:17px;margin-bottom:4px">Extend promotion</h3>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:16px">Push the end date forward. Performance keeps accumulating.</div>
+    <div class="grid2"><div class="f"><label>New end date</label><input id="extDate" type="date"></div><div class="f"><label>New end time</label><input id="extTime" type="time" value="20:00"></div></div>
+    <div style="display:flex;gap:10px;margin-top:18px"><button class="btn outline" style="flex:1" onclick="document.getElementById('extendOverlay').style.display='none'">Cancel</button><button class="btn green" style="flex:1" onclick="confirmExtend()">Extend</button></div>
+  </div>
+</div>
+
+</div>

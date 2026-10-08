@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include woolmatt_promotions *.css
+recursive-include woolmatt_promotions *.csv
+recursive-include woolmatt_promotions *.html
+recursive-include woolmatt_promotions *.ico
+recursive-include woolmatt_promotions *.js
+recursive-include woolmatt_promotions *.json
+recursive-include woolmatt_promotions *.md
+recursive-include woolmatt_promotions *.png
+recursive-include woolmatt_promotions *.py
+recursive-include woolmatt_promotions *.svg
+recursive-include woolmatt_promotions *.txt
+recursive-exclude woolmatt_promotions *.pyc
