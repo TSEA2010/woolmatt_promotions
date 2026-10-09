@@ -334,6 +334,9 @@ function sync_scope_and_render(frm) {
 				sVal: s.discount_percentage || s.discount_amount || 15,
 				buyQty: s.min_qty || 1,
 				freeQty: s.free_qty || 1,
+				freeItemId: s.free_item || null,
+				freeItemName: s.free_item ? (s.free_item_name || s.free_item) : null,
+				rewardDisc: 100,
 				comboDisc: s.discount_percentage || 20,
 				role: (s.rule_description && s.rule_description.includes('COMBO MAIN')) ? 'main' : (idx === 0 ? 'main' : 'addon')
 			};
@@ -660,6 +663,72 @@ function render_headline_config(frm) {
 				<span class="text-muted">(Buy 1 Get 1 Free default)</span>
 			</div>
 		`);
+	} else if (t === 'bxgy') {
+		box.html(`
+			<div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+				<div><b>Buy Qty:</b> <input type="number" id="wm-hl-bq" class="form-control input-xs" value="1" style="width:60px; display:inline-block; text-align:center;"></div>
+				<div><b>Get Free Qty:</b> <input type="number" id="wm-hl-fq" class="form-control input-xs" value="1" style="width:60px; display:inline-block; text-align:center;"></div>
+				<div style="position:relative; min-width:260px;">
+					<b>Free Item (All Rows):</b>
+					<input type="text" id="wm-hl-free-item-input" class="form-control input-xs" placeholder="Search reward item for all rows..." autocomplete="off" style="width:220px; display:inline-block; margin-left:4px;">
+					<div id="wm-hl-free-item-results" style="position:absolute; left:130px; top:30px; background:#fff; border:1px solid #dfe5dc; border-radius:6px; z-index:1050; display:none; max-height:200px; overflow-y:auto; width:280px; box-shadow:0 4px 12px rgba(0,0,0,0.15);"></div>
+				</div>
+				<span class="text-muted">(Or pick/change per item in the table below)</span>
+			</div>
+		`);
+
+		const hlFreeInput = box.find('#wm-hl-free-item-input');
+		const hlFreeResults = box.find('#wm-hl-free-item-results');
+
+		hlFreeInput.on('keyup input', function() {
+			const term = $(this).val().trim();
+			if (term.length < 2) {
+				hlFreeResults.hide().empty();
+				return;
+			}
+			frappe.call({
+				method: 'woolmatt_promotions.woolmatt_promotions.api.search_products',
+				args: { term: term },
+				callback: function(r) {
+					hlFreeResults.empty();
+					if (r.message && r.message.length) {
+						r.message.forEach(item => {
+							hlFreeResults.append(`
+								<div class="wm-hl-free-row" data-id="${item.id}" data-name="${item.name}" style="padding:6px 10px; cursor:pointer; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+									<div><b>${item.name}</b> <small class="text-muted">(${item.id})</small></div>
+									<span class="badge label-success" style="font-size:10px;">Sh ${item.price}</span>
+								</div>
+							`);
+						});
+						hlFreeResults.show();
+					} else {
+						hlFreeResults.append('<div style="padding:8px 10px; font-size:12px;" class="text-muted">No products found</div>').show();
+					}
+				}
+			});
+		});
+
+		hlFreeResults.on('click', '.wm-hl-free-row', function() {
+			const fId = $(this).data('id');
+			const fName = $(this).data('name');
+			hlFreeInput.val(`${fName} (${fId})`);
+			hlFreeResults.hide().empty();
+
+			const items = frm.doc.__wm_items || [];
+			items.forEach(p => {
+				p.freeItemId = fId;
+				p.freeItemName = fName;
+			});
+			sync_items_to_form_slabs(frm);
+			render_form_table(frm);
+			frappe.show_alert({ message: `Set Free Item to ${fName} for all rows`, indicator: 'green' });
+		});
+
+		$(document).on('click.wm_hl_free', function(e) {
+			if (!$(e.target).closest('#wm-hl-free-item-input, #wm-hl-free-item-results').length) {
+				hlFreeResults.hide();
+			}
+		});
 	} else if (t === 'combo') {
 		box.html(`
 			<div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
@@ -764,7 +833,7 @@ function apply_headline_to_all_rows(frm) {
 				p.sVal = val;
 				p.wVal = 0;
 			}
-		} else if (t === 'bogo') {
+		} else if (t === 'bogo' || t === 'bxgy') {
 			p.buyQty = bq; p.freeQty = fq;
 		} else if (t === 'combo') {
 			if (p.role !== 'main') p.comboDisc = val;
@@ -908,12 +977,19 @@ function render_form_table(frm) {
 		} else if (currentType === 'bxgy') {
 			const bq = p.buyQty || 1;
 			const fq = p.freeQty || 1;
-			const freeItem = p.freeItemName || p.name + ' (Same Item)';
+			const hasCustomFree = !!p.freeItemId;
+			const freeItemLabel = p.freeItemName ? `${p.freeItemName} (${p.freeItemId})` : (p.name + ' (Same Item)');
 			const rd = p.rewardDisc || 100;
 
 			tr += `
 				<td style="text-align:right;"><input type="number" class="form-control input-xs text-right wm-row-bq" data-idx="${idx}" value="${bq}" style="width:55px; display:inline-block;"></td>
-				<td><input type="text" class="form-control input-xs wm-row-free-item" data-idx="${idx}" value="${freeItem}" style="width:140px; display:inline-block;"></td>
+				<td style="position:relative; min-width:210px;">
+					<div style="display:flex; align-items:center; gap:4px;">
+						<input type="text" class="form-control input-xs wm-row-free-search" data-idx="${idx}" value="${freeItemLabel}" placeholder="Search Free Item..." autocomplete="off" style="width:170px; display:inline-block; font-size:11.5px; ${hasCustomFree ? 'border-color:#2e7d32; background:#f4fbf5; font-weight:600;' : ''}">
+						${hasCustomFree ? `<button class="btn btn-default btn-xs text-muted wm-row-free-reset" data-idx="${idx}" title="Reset to Same Item" style="padding:2px 5px; font-size:11px;">×</button>` : ''}
+					</div>
+					<div class="wm-row-free-results" data-idx="${idx}" style="position:absolute; left:0; top:30px; background:#fff; border:1px solid #dfe5dc; border-radius:6px; z-index:1050; display:none; max-height:180px; overflow-y:auto; width:260px; box-shadow:0 4px 12px rgba(0,0,0,0.15);"></div>
+				</td>
 				<td style="text-align:right;"><input type="number" class="form-control input-xs text-right wm-row-fq" data-idx="${idx}" value="${fq}" style="width:55px; display:inline-block;"></td>
 				<td style="text-align:right;"><input type="number" class="form-control input-xs text-right wm-row-rd" data-idx="${idx}" value="${rd}" style="width:60px; display:inline-block;"></td>
 				<td>${fundSel}</td>
@@ -993,6 +1069,10 @@ function render_form_table(frm) {
 		if (currentType === 'bogo') {
 			p.buyQty = parseFloat(tbody.find(`.wm-row-bq[data-idx="${idx}"]`).val()) || 1;
 			p.freeQty = parseFloat(tbody.find(`.wm-row-fq[data-idx="${idx}"]`).val()) || 1;
+		} else if (currentType === 'bxgy') {
+			p.buyQty = parseFloat(tbody.find(`.wm-row-bq[data-idx="${idx}"]`).val()) || 1;
+			p.freeQty = parseFloat(tbody.find(`.wm-row-fq[data-idx="${idx}"]`).val()) || 1;
+			p.rewardDisc = parseFloat(tbody.find(`.wm-row-rd[data-idx="${idx}"]`).val()) || 100;
 		} else if (currentType === 'pct' || currentType === 'happy') {
 			p.sVal = parseFloat(tbody.find(`.wm-row-sval[data-idx="${idx}"]`).val()) || 0;
 			p.wVal = parseFloat(tbody.find(`.wm-row-wval[data-idx="${idx}"]`).val()) || 0;
@@ -1007,6 +1087,73 @@ function render_form_table(frm) {
 
 		sync_items_to_form_slabs(frm);
 		render_form_table(frm);
+	});
+
+	// BXGY row-level Free Item live search autocomplete
+	tbody.find('.wm-row-free-search').on('keyup input', function() {
+		const idx = $(this).data('idx');
+		const searchBox = $(this);
+		const resultsBox = tbody.find(`.wm-row-free-results[data-idx="${idx}"]`);
+		const term = searchBox.val().trim();
+
+		if (term.length < 2) {
+			resultsBox.hide().empty();
+			return;
+		}
+
+		frappe.call({
+			method: 'woolmatt_promotions.woolmatt_promotions.api.search_products',
+			args: { term: term },
+			callback: function(r) {
+				resultsBox.empty();
+				if (r.message && r.message.length) {
+					r.message.forEach(item => {
+						resultsBox.append(`
+							<div class="wm-row-free-select" data-idx="${idx}" data-id="${item.id}" data-name="${item.name}" style="padding:6px 10px; cursor:pointer; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+								<div><b>${item.name}</b> <small class="text-muted">(${item.id})</small></div>
+								<span class="badge label-success" style="font-size:10px;">Sh ${item.price}</span>
+							</div>
+						`);
+					});
+					resultsBox.show();
+				} else {
+					resultsBox.append('<div style="padding:8px 10px; font-size:12px;" class="text-muted">No products found</div>').show();
+				}
+			}
+		});
+	});
+
+	tbody.on('click', '.wm-row-free-select', function() {
+		const idx = $(this).data('idx');
+		const fId = $(this).data('id');
+		const fName = $(this).data('name');
+		let p = items[idx];
+		if (!p) return;
+
+		p.freeItemId = fId;
+		p.freeItemName = fName;
+		sync_items_to_form_slabs(frm);
+		render_form_table(frm);
+		frappe.show_alert({ message: `Free Item set to ${fName} for ${p.name}`, indicator: 'green' });
+	});
+
+	tbody.find('.wm-row-free-reset').on('click', function(e) {
+		e.preventDefault();
+		const idx = $(this).data('idx');
+		let p = items[idx];
+		if (!p) return;
+
+		p.freeItemId = null;
+		p.freeItemName = null;
+		sync_items_to_form_slabs(frm);
+		render_form_table(frm);
+		frappe.show_alert({ message: `Reset to Same Item for ${p.name}`, indicator: 'orange' });
+	});
+
+	$(document).on('click.wm_row_free', function(e) {
+		if (!$(e.target).closest('.wm-row-free-search, .wm-row-free-results').length) {
+			$('.wm-row-free-results').hide();
+		}
 	});
 
 	tbody.find('.wm-remove-row').on('click', function(e) {
@@ -1037,6 +1184,7 @@ function sync_items_to_form_slabs(frm) {
 			min_qty: p.buyQty || 1,
 			free_qty: p.freeQty || 1,
 			same_item: (currentType === 'bogo') ? 1 : 0,
+			free_item: (currentType === 'bxgy') ? (p.freeItemId || p.id) : null,
 			rule_description: `${p.name} - ${currentType.toUpperCase()} Promo`,
 			custom_funding_type: p.fund || 'supplier'
 		}));
@@ -1094,7 +1242,7 @@ function apply_bulk_form(frm) {
 			p.sVal = val;
 		} else if (currentType === 'price') {
 			p.sVal = val;
-		} else if (currentType === 'bogo') {
+		} else if (currentType === 'bogo' || currentType === 'bxgy') {
 			if (val > 0) p.freeQty = val;
 		} else if (currentType === 'combo') {
 			if (p.role !== 'main') p.comboDisc = val;
