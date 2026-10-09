@@ -7,13 +7,81 @@ from frappe.utils import flt, cstr
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note, make_sales_invoice
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 
+def is_within_happy_hour(pr_dict):
+    """Check if current time and weekday match the pricing rule's happy hour slots or valid times."""
+    slots_raw = pr_dict.get("custom_happy_hour_slots")
+    from_time = pr_dict.get("custom_valid_from_time")
+    upto_time = pr_dict.get("custom_valid_upto_time")
+
+    if not slots_raw and not from_time and not upto_time:
+        return True
+
+    now = frappe.utils.now_datetime()
+    current_time_str = now.strftime("%H:%M:%S")
+
+    # If JSON slots array is defined
+    if slots_raw:
+        try:
+            slots = json.loads(slots_raw) if isinstance(slots_raw, str) else slots_raw
+            if isinstance(slots, list) and slots:
+                matched = False
+                for s in slots:
+                    f = s.get("from")
+                    t = s.get("to")
+                    if f and len(f) == 5: f += ":00"
+                    if t and len(t) == 5: t += ":00"
+                    if f and t and f <= current_time_str <= t:
+                        matched = True
+                        break
+                return matched
+        except Exception:
+            pass
+
+    # Fallback to direct time fields
+    if from_time or upto_time:
+        f = str(from_time) if from_time else "00:00:00"
+        t = str(upto_time) if upto_time else "23:59:59"
+        if len(f) == 5: f += ":00"
+        if len(t) == 5: t += ":00"
+        return f <= current_time_str <= t
+
+    return True
+
+def apply_happy_hour_overrides():
+    """Hook into ERPNext pricing rule filter_pricing_rules to enforce Happy Hour time windows."""
+    try:
+        from erpnext.accounts.doctype.pricing_rule import utils as utils_mod
+        if getattr(utils_mod, "_happy_hour_patched", False):
+            return
+
+        original_filter_rules = utils_mod.filter_pricing_rules
+
+        def patched_filter_pricing_rules(args, pricing_rules, doc=None):
+            if isinstance(pricing_rules, list):
+                valid_rules = [r for r in pricing_rules if is_within_happy_hour(r)]
+                return original_filter_rules(args, valid_rules, doc)
+            elif isinstance(pricing_rules, dict):
+                if not is_within_happy_hour(pricing_rules):
+                    return None
+                return original_filter_rules(args, pricing_rules, doc)
+            return original_filter_rules(args, pricing_rules, doc)
+
+        utils_mod.filter_pricing_rules = patched_filter_pricing_rules
+        utils_mod._happy_hour_patched = True
+    except Exception as e:
+        frappe.log_error(f"Error applying happy hour overrides: {e}", "Happy Hour Hook")
+
 @frappe.whitelist()
 def get_kpis():
+    rebate_due = 0
+    if frappe.db.table_exists("Supplier Rebate Claim"):
+        rebate_due = frappe.db.sql("select ifnull(sum(rebate_amount), 0) from `tabSupplier Rebate Claim` where status='Pending'")[0][0] or 0
+
     return {
         "active_promos": frappe.db.count("Pricing Rule", {"custom_is_woolmatt_promo": 1, "disable": 0}),
         "scheduled_promos": 0,
         "discount_30d": 0,
-        "rebate_due": frappe.db.get_value("Supplier Rebate Claim", {"status": "Pending"}, "sum(rebate_amount)") or 0,
+        "rebate_due": rebate_due,
         "self_funded_cost": 0
     }
 
@@ -291,6 +359,15 @@ def sync_scheme_pricing_rules(doc, method=None):
     if not price_slabs and not product_slabs:
         return
         
+    hh_slots = []
+    if getattr(doc, "custom_item_discounts_json", None):
+        try:
+            parsed_json = json.loads(doc.custom_item_discounts_json) if isinstance(doc.custom_item_discounts_json, str) else doc.custom_item_discounts_json
+            if isinstance(parsed_json, dict) and parsed_json.get("hh_slots"):
+                hh_slots = parsed_json.get("hh_slots")
+        except Exception:
+            pass
+
     # 1. Price Discount Slabs
     for idx, slab in enumerate(price_slabs):
         item_code = getattr(slab, "item_code", None) or (scheme_items[0] if scheme_items else None)
@@ -329,6 +406,10 @@ def sync_scheme_pricing_rules(doc, method=None):
         
         pr.valid_from = vf
         pr.valid_upto = vu
+        if hh_slots:
+            pr.custom_happy_hour_slots = json.dumps(hh_slots)
+            pr.custom_valid_from_time = hh_slots[0].get("from")
+            pr.custom_valid_upto_time = hh_slots[0].get("to")
         pr.priority = cstr(getattr(doc, "priority", 1) or 1)
         pr.price_or_product_discount = "Price"
         pr.margin_type = ""
@@ -383,6 +464,12 @@ def sync_scheme_pricing_rules(doc, method=None):
             "currency": "",
             "valid_from": vf,
             "valid_upto": vu,
+            "custom_happy_hour_slots": json.dumps(hh_slots) if hh_slots else None,
+            "custom_valid_from_time": hh_slots[0].get("from") if hh_slots else None,
+            "custom_valid_upto_time": hh_slots[0].get("to") if hh_slots else None,
+            "custom_funding_type": pr.custom_funding_type,
+            "custom_self_amount": pr.custom_self_amount,
+            "custom_supplier_amount": pr.custom_supplier_amount,
             "customer": None,
             "supplier": None,
             "campaign": None,

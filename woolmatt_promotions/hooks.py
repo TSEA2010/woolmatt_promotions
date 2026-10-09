@@ -13,6 +13,10 @@ doctype_js = {
     "Promotional Scheme": "public/js/promotional_scheme_custom.js"
 }
 
+before_request = [
+    "woolmatt_promotions.woolmatt_promotions.api.apply_happy_hour_overrides"
+]
+
 doc_events = {
     "Promotional Scheme": {
         "on_update": [

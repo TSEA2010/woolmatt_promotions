@@ -306,6 +306,7 @@ function sync_scope_and_render(frm) {
 			if (parsed && parsed.items && parsed.items.length) {
 				frm.doc.__wm_items = parsed.items;
 				if (parsed.offer_type) frm.doc.__wm_offer_type = parsed.offer_type;
+				if (parsed.hh_slots) frm.doc.__wm_hh_slots = parsed.hh_slots;
 				sync_items_to_form_slabs(frm);
 				render_woolmatt_promo_grid(frm);
 				return;
@@ -1173,7 +1174,8 @@ function sync_items_to_form_slabs(frm) {
 	// Persist full state to custom_item_discounts_json field on form document
 	frm.doc.custom_item_discounts_json = JSON.stringify({
 		offer_type: currentType,
-		items: items
+		items: items,
+		hh_slots: frm.doc.__wm_hh_slots || []
 	});
 	frm.refresh_field('custom_item_discounts_json');
 
