@@ -40,7 +40,13 @@ def patch_pricing_rules():
         def _woolmatt_get_other_conditions(conditions, values, args):
             dt = args.get("transaction_date") or args.get("posting_date")
             if isinstance(dt, str) and len(dt) == 10:
-                args["transaction_date"] = dt + " 12:00:00"
+                if isinstance(args, dict):
+                    args["transaction_date"] = dt + " 12:00:00"
+                else:
+                    try:
+                        args.set("transaction_date", dt + " 12:00:00")
+                    except Exception:
+                        setattr(args, "transaction_date", dt + " 12:00:00")
 
             return _orig_get_other_conditions(conditions, values, args)
 
